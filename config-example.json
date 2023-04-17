@@ -1,4 +1,5 @@
 {
     "interval": 60,
-    "base-url": "https://example.com/pages?pg="
+    "base-url": "https://example.com/pages",
+    "webhook": "https://discord.com/api/webhooks/xxxxxxxxxxxxxxxxxxxxxxxxxxx"
 }

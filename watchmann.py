@@ -1,15 +1,19 @@
-import discord
 import json
 import requests
 import time
 import sqlite3
 from bs4 import BeautifulSoup
+from discord import SyncWebhook
 
 # Load settings
 with open('config.json', 'r') as f:
     config = json.load(f)
 
 interval = config['interval']
+
+# Initialize webhook
+webhook_url = config['webhook']
+webhook = SyncWebhook.from_url(webhook_url)
 
 # Connect to SQLite database
 conn = sqlite3.connect("links.sqlite3")
@@ -19,7 +23,9 @@ c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS links
              (id INTEGER PRIMARY KEY AUTOINCREMENT, link TEXT)''')
 
+
 def updateLinks(url):
+    new_links = []
     try:
         # Make HTTP request to URL
         response = requests.get(url)
@@ -39,6 +45,12 @@ def updateLinks(url):
                 c.execute("INSERT INTO links (link) VALUES (?)", (link,))
                 conn.commit()
                 print(f"New link found: {config['base-url']}{link}")
+                new_links.append(config['base-url'] + link)
+        
+        # Send Discord message containing new links
+        if len(new_links) > 0:
+            msg = "\n".join(new_links)
+            webhook.send(msg)
 
     except Exception as e:
         print(f"Error: {e}")
