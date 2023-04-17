@@ -14,6 +14,7 @@ interval = config['interval']
 # Initialize webhook
 webhook_url = config['webhook']
 webhook = SyncWebhook.from_url(webhook_url)
+webhook.send("Successfully connected!")
 
 # Connect to SQLite database
 conn = sqlite3.connect("links.sqlite3")
@@ -47,10 +48,18 @@ def updateLinks(url):
                 print(f"New link found: {config['base-url']}{link}")
                 new_links.append(config['base-url'] + link)
         
-        # Send Discord message containing new links
+        # Send Discord message containing new links, limited to 10 links per message.
         if len(new_links) > 0:
-            msg = "\n".join(new_links)
-            webhook.send(msg)
+            message = ""
+            for i, link in enumerate(new_links):
+                if i % 10 == 0 and i > 0:
+                    webhook.send(message)
+                    message = ""
+                message += f"{link}\n"
+            if len(message) > 0:
+                webhook.send(message)
+        else:
+            print("No new links found")
 
     except Exception as e:
         print(f"Error: {e}")
@@ -58,8 +67,8 @@ def updateLinks(url):
 
 while True:
     for i in range(1,21):
-        print(f"Scanning page {i} of 20")
         updateLinks(f"{config['base-url']}/damages?pg={i}")
         time.sleep(1)
     # Wait for interval before next check
+    print(f"Sleeping for {interval} seconds")
     time.sleep(interval)
